@@ -139,7 +139,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="LICENSE" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
