@@ -60,7 +60,7 @@ namespace RianDNN {
 		inline double GetActDif(string activation, int layer_num, double x); //differential
 		//inline double GetSoftmaxDif(); //Softmax must on outputlayer
 		double GetLoss(double* target); //default = MSE(Mean Squared Error)
-		//inline double GetLossDif();
+		double GetLossDif(double target, double x); //loss derivation
 		void GradZero(); //reset gradient
 	};
 
@@ -109,6 +109,9 @@ namespace RianDNN {
 		loss_ = loss / layer_[layer_num_ - 1].node_num_;
 		loss_sum_ += loss_;
 		return loss_sum_ / forward_step_;
+	}
+	double DNN::GetLossDif(double target, double x) {
+		return -(target - x) / layer_[layer_num_-1].node_num_;
 	}
 	void DNN::AddLayer(int node_num, string activation) {
 		layer_num_++;
@@ -179,8 +182,8 @@ namespace RianDNN {
 				//Get global gradient
 				if (n == layer_num_ - 1) { //output
 					//MSE loss derivation
-					now->grad_[i] = (2 * fabs(target[i] - now->result_[i])) / now->node_num_;
-					//now->grad_[i] = 2/now->node_num_;
+					now->grad_[i] = GetLossDif(target[i], now->result_[i]);
+					//now->grad_[i] = 1;
 				}
 				else {
 					for (int j = 0; j < layer_[n + 1].node_num_; j++) {

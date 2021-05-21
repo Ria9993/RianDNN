@@ -7,5 +7,6 @@ I'm making this for use in my machine learning projects
 |------|------|
 | Feed Forward | :heavy_check_mark: |
 | Loss Function(MSE) | :heavy_check_mark: |
-| BackPropagation | :question: |
-| Gradient Descent | :question: |
+| BackPropagation | :heavy_check_mark: |
+| Gradient Descent | :heavy_check_mark: |
+| N-step Optimize | :question: |

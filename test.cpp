@@ -9,12 +9,12 @@ int main() {
 	RianDNN::DNN dnn;
 	dnn.learning_rate = 0.01f;
 	//dnn.momentum_rate = 0.1;
-	dnn.input_num_ = 2;
-	//dnn.AddLayer(300, "ReLU");
-	//dnn.AddLayer(300, "ReLU");
-	//dnn.AddLayer(300, "ReLU");
-	dnn.AddLayer(2, "None"); //output layer
-	//dnn.AddLayer(2, "Softmax"); 
+	dnn.input_num_ = 10; //input Layer
+	dnn.AddLayer(300, "ReLU");
+	dnn.AddLayer(300, "ReLU");
+	dnn.AddLayer(300, "ReLU");
+	dnn.AddLayer(2, "None");
+	//dnn.AddLayer(2, "Softmax"); //output layer 
 
 	/*DEBUG*/
 	random_device rd;
@@ -27,7 +27,7 @@ int main() {
 			input[j] = 0.1f;
 		}
 		double* output = dnn.Forward(input);
-		double target[10] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
+		double target[10] = { 2.0f, 4.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 		dnn.Optimize(target);
 		printf("weights and bias\n");
 		for (int j = 0; j < dnn.layer_[dnn.layer_num_ - 1].node_num_; j++) {
