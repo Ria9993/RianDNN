@@ -29,6 +29,7 @@ namespace RianDNN {
 		vector<double> grad_; //global gradient
 		vector<double> bias_;
 		vector<double> result_;
+		vector<double> loss_dif_;
 		~Layer() {
 		}
 	};
@@ -54,7 +55,8 @@ namespace RianDNN {
 		~DNN() {
 		}
 		void AddLayer(int node_num, string activation);
-		double* Forward(double* input);
+		double* Forward(double* input); //just forward
+		double* Forward(double* input,double * target); //forward for optimize
 		void Optimize(double* target);
 		inline double GetAct(string activation, int layer_num, double x); //activation function
 		inline double GetActDif(string activation, int layer_num, double x); //differential
@@ -81,7 +83,7 @@ namespace RianDNN {
 			for (int i = 0; i < layer_[layer_num].node_num_; i++) {
 				sum += expf(layer_[layer_num].result_[i] - max);
 			}
-			return expf(x) / sum;
+			return expf(x-max) / sum;
 		}
 		else { //"None"
 			return x;
@@ -130,7 +132,8 @@ namespace RianDNN {
 		/* weight HE initialization (sqrt(2) * sqrt(2/(in+out))) */
 		random_device rd;
 		mt19937 rnd(rd());
-		normal_distribution <double> HE_init(0, sqrtf(2) * sqrtf((float)2 / (new_layer->last_node_num_ + new_layer->node_num_)));
+		//normal_distribution <double> HE_init(0, sqrtf(2) * sqrtf((float)2 / (new_layer->last_node_num_ + new_layer->node_num_)));
+		normal_distribution <double> HE_init(0, (float)2 / (new_layer->last_node_num_ + new_layer->node_num_));
 		new_layer->weight_.resize(new_layer->node_num_);
 		new_layer->weight_grad_.resize(new_layer->node_num_);
 		for (int i = 0; i < new_layer->node_num_; i++) {
@@ -144,14 +147,35 @@ namespace RianDNN {
 		new_layer->grad_.resize(new_layer->node_num_);
 		new_layer->bias_.resize(new_layer->node_num_);
 		new_layer->result_.resize(new_layer->node_num_);
+		new_layer->loss_dif_.resize(new_layer->node_num_);
 		for (int i = 0; i < new_layer->node_num_; i++) {
 			new_layer->bias_[i] = 0.0f;
 			new_layer->result_[i] = 0.0f;
-			new_layer->grad_[i] = 0.0f;
+			new_layer->grad_[i] = 0;
+			new_layer->loss_dif_[i] = 0;
 		}
 		return;
 	}
 	double* DNN::Forward(double* input) {
+		for (int n = 0; n < layer_num_; n++) {
+			Layer* now = &layer_[n];
+			for (int i = 0; i < now->node_num_; i++) {
+				now->result_[i] = now->bias_[i];
+				for (int j = 0; j < now->last_node_num_; j++) {
+					if (n == 0) {//input
+						now->result_[i] += now->weight_[i][j] * input[j];
+					}
+					else {
+						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
+					}
+				}
+				now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
+			}
+		}
+		return &layer_[layer_num_ - 1].result_[0];
+	}
+	double* DNN::Forward(double* input, double* target) {
+		GetLoss(target);
 		for (int n = 0; n < layer_num_; n++) {
 			Layer* now = &layer_[n];
 			for (int i = 0; i < now->node_num_; i++) {
@@ -167,14 +191,16 @@ namespace RianDNN {
 					}
 				}
 				now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
-				//now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
+				now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
+				if (n == layer_num_ - 1) {
+					now->loss_dif_[i] += GetLossDif(target[i], now->result_[i]);
+				}
 			}
 		}
 		forward_step_++;
 		return &layer_[layer_num_ - 1].result_[0];
 	}
 	void DNN::Optimize(double *target) {
-		GetLoss(target);
 		for (int n = layer_num_ - 1; n >= 0; n--) {
 			Layer* now = &layer_[n];
 			/*Backpropagation*/
@@ -182,8 +208,8 @@ namespace RianDNN {
 				//Get global gradient
 				if (n == layer_num_ - 1) { //output
 					//MSE loss derivation
-					now->grad_[i] = GetLossDif(target[i], now->result_[i]);
-					//now->grad_[i] = 1;
+					//now->grad_[i] = GetLossDif(target[i], now->result_[i]);
+					now->loss_dif_[i] /= forward_step_;
 				}
 				else {
 					for (int j = 0; j < layer_[n + 1].node_num_; j++) {
@@ -191,8 +217,9 @@ namespace RianDNN {
 					}
 				}
 
-				//global gradient * activation gradient
-				now->grad_[i] *= GetActDif(now->activation_, n, now->result_[i]);
+				now->grad_[i] /= forward_step_;
+				if (n == layer_num_ - 1)
+					now->grad_[i] *= now->loss_dif_[i];
 
 				for (int j = 0; j < now->last_node_num_; j++) {
 					//Get Avg weight gradient
@@ -213,7 +240,8 @@ namespace RianDNN {
 		for (int n = 0; n < layer_num_; n++) {
 			Layer* now = &layer_[n];
 			for (int i = 0; i < layer_[n].node_num_; i++) {
-				now->grad_[i] = 0.0f;
+				now->grad_[i] = 0;
+				now->loss_dif_[i] = 0;
 				for (int j = 0; j < layer_[n].last_node_num_; j++) {
 					now->weight_grad_[i][j] = 0.0f;
 				}
