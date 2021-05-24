@@ -29,7 +29,7 @@ namespace RianDNN {
 		vector<double> grad_; //global gradient
 		vector<double> bias_;
 		vector<double> result_;
-		vector<double> loss_dif_;
+		vector<double> back_pass_;
 		~Layer() {
 		}
 	};
@@ -43,7 +43,7 @@ namespace RianDNN {
 		int output_num_;
 		int layer_num_;
 		vector<Layer> layer_;
-		
+
 		int forward_step_; //for calc avg(local_decent)
 		double loss_sum_;
 		double loss_;
@@ -56,7 +56,7 @@ namespace RianDNN {
 		}
 		void AddLayer(int node_num, string activation);
 		double* Forward(double* input); //just forward
-		double* Forward(double* input,double * target); //forward for optimize
+		double* Forward(double* input, double* target); //forward for optimize
 		void Optimize(double* target);
 		inline double GetAct(string activation, int layer_num, double x); //activation function
 		inline double GetActDif(string activation, int layer_num, double x); //differential
@@ -83,7 +83,7 @@ namespace RianDNN {
 			for (int i = 0; i < layer_[layer_num].node_num_; i++) {
 				sum += expf(layer_[layer_num].result_[i] - max);
 			}
-			return expf(x-max) / sum;
+			return expf(x - max) / sum;
 		}
 		else { //"None"
 			return x;
@@ -103,7 +103,7 @@ namespace RianDNN {
 		}
 		return 0;
 	}
-	double DNN::GetLoss(double * target) {
+	double DNN::GetLoss(double* target) {
 		double loss = 0;
 		for (int i = 0; i < layer_[layer_num_ - 1].node_num_; i++) {
 			loss += powf((target[i] - layer_[layer_num_ - 1].result_[i]), 2);
@@ -113,7 +113,7 @@ namespace RianDNN {
 		return loss_sum_ / forward_step_;
 	}
 	double DNN::GetLossDif(double target, double x) {
-		return -(target - x) / layer_[layer_num_-1].node_num_;
+		return -(target - x) / layer_[layer_num_ - 1].node_num_;
 	}
 	void DNN::AddLayer(int node_num, string activation) {
 		layer_num_++;
@@ -147,89 +147,102 @@ namespace RianDNN {
 		new_layer->grad_.resize(new_layer->node_num_);
 		new_layer->bias_.resize(new_layer->node_num_);
 		new_layer->result_.resize(new_layer->node_num_);
-		new_layer->loss_dif_.resize(new_layer->node_num_);
+		new_layer->back_pass_.resize(new_layer->node_num_);
 		for (int i = 0; i < new_layer->node_num_; i++) {
-			new_layer->bias_[i] = 0.0f;
+			new_layer->bias_[i] = 0.1f;
 			new_layer->result_[i] = 0.0f;
 			new_layer->grad_[i] = 0;
-			new_layer->loss_dif_[i] = 0;
+			new_layer->back_pass_[i] = 0;
 		}
 		return;
 	}
 	double* DNN::Forward(double* input) {
 		for (int n = 0; n < layer_num_; n++) {
 			Layer* now = &layer_[n];
-			for (int i = 0; i < now->node_num_; i++) {
-				now->result_[i] = now->bias_[i];
-				for (int j = 0; j < now->last_node_num_; j++) {
-					if (n == 0) {//input
-						now->result_[i] += now->weight_[i][j] * input[j];
+			if (n == 0) { //First Hidden layer
+				for (int i = 0; i < now->node_num_; i++) {
+					now->result_[i] = now->bias_[i];
+					for (int j = 0; j < now->last_node_num_; j++) {
+						now->weight_grad_[i][j] = input[j];
 					}
-					else {
-						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
-					}
+					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
 				}
-				now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
+			}
+			else {
+				for (int i = 0; i < now->node_num_; i++) {
+					now->result_[i] = now->bias_[i];
+					for (int j = 0; j < now->last_node_num_; j++) {
+						now->weight_grad_[i][j] = layer_[n - 1].result_[j];
+					}
+					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
+				}
 			}
 		}
 		return &layer_[layer_num_ - 1].result_[0];
 	}
-	double* DNN::Forward(double* input, double* target) {
+	double* DNN::Forward(double* input, double *target) {
+		for (int n = 0; n < layer_num_; n++) {
+			Layer* now = &layer_[n];
+			if (n == 0) { //First Hidden layer
+				for (int i = 0; i < now->node_num_; i++) {
+					now->result_[i] = now->bias_[i];
+					for (int j = 0; j < now->last_node_num_; j++) {
+						now->result_[i] += now->weight_[i][j] * input[j];
+						now->weight_grad_[i][j] = input[j];
+					}
+					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
+					now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
+				}
+			}
+			else {
+				for (int i = 0; i < now->node_num_; i++) {
+					now->result_[i] = now->bias_[i];
+					for (int j = 0; j < now->last_node_num_; j++) {
+						now->result_[i] += now->weight_[i][j] * layer_[n-1].result_[j];
+						now->weight_grad_[i][j] = layer_[n-1].result_[j];
+					}
+					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
+					now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
+				}
+			}
+		}
+		Layer* output = &layer_[layer_num_ - 1];
+		for (int i = 0; i < output->node_num_; i++) {
+			output->back_pass_[i] += GetLossDif(target[i], output->result_[i]);
+		}
+		forward_step_++;
 		GetLoss(target);
+		return &layer_[layer_num_ - 1].result_[0];
+	}
+	void DNN::Optimize(double* target) {
+		/*Get Avg derivation*/
 		for (int n = 0; n < layer_num_; n++) {
 			Layer* now = &layer_[n];
 			for (int i = 0; i < now->node_num_; i++) {
-				now->result_[i] = now->bias_[i];
-				for (int j = 0; j < now->last_node_num_; j++) {
-					if (n == 0) {//input
-						now->result_[i] += now->weight_[i][j] * input[j];
-						now->weight_grad_[i][j] += input[j];
-					}
-					else {
-						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
-						now->weight_grad_[i][j] += layer_[n - 1].result_[j];
-					}
-				}
-				now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
-				now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
+				now->grad_[i] /= forward_step_;
 				if (n == layer_num_ - 1) {
-					now->loss_dif_[i] += GetLossDif(target[i], now->result_[i]);
+					now->back_pass_[i] /= forward_step_;
+				}
+				for (int j = 0; j < now->last_node_num_; j++) {
+					now->weight_grad_[i][j] /= forward_step_;
 				}
 			}
 		}
-		forward_step_++;
-		return &layer_[layer_num_ - 1].result_[0];
-	}
-	void DNN::Optimize(double *target) {
+		/*BackPropagate*/
 		for (int n = layer_num_ - 1; n >= 0; n--) {
 			Layer* now = &layer_[n];
-			/*Backpropagation*/
 			for (int i = 0; i < now->node_num_; i++) {
-				//Get global gradient
-				if (n == layer_num_ - 1) { //output
-					//MSE loss derivation
-					//now->grad_[i] = GetLossDif(target[i], now->result_[i]);
-					now->loss_dif_[i] /= forward_step_;
-				}
-				else {
-					for (int j = 0; j < layer_[n + 1].node_num_; j++) {
-						now->grad_[i] += layer_[n + 1].weight_grad_[j][i];
+				now->grad_[i] *= now->back_pass_[i];
+			}
+			for (int i = 0; i < now->node_num_; i++) {
+				for (int j = 0; j < now->last_node_num_; j++) {
+					now->weight_grad_[i][j] *= now->grad_[i];
+					now->weight_[i][j] = now->weight_[i][j] - learning_rate * now->weight_grad_[i][j];
+					if (n != 0) {
+						layer_[n - 1].back_pass_[i] += now->weight_grad_[i][j];
 					}
 				}
-
-				now->grad_[i] /= forward_step_;
-				if (n == layer_num_ - 1)
-					now->grad_[i] *= now->loss_dif_[i];
-
-				for (int j = 0; j < now->last_node_num_; j++) {
-					//Get Avg weight gradient
-					now->weight_grad_[i][j] /= forward_step_;
-					//local_gradient * global gradient
-					now->weight_grad_[i][j] *= now->grad_[i];
-					//Weight & Bias Update
-					now->weight_[i][j] = now->weight_[i][j] - learning_rate * now->weight_grad_[i][j];
-					now->bias_[i] = now->bias_[i] - learning_rate * now->grad_[i];
-				}
+				now->bias_[i] = now->bias_[i] - learning_rate * now->grad_[i];
 			}
 		}
 		//GradZero();
@@ -237,13 +250,13 @@ namespace RianDNN {
 	void DNN::GradZero() {
 		forward_step_ = 0;
 		loss_sum_ = 0;
-		for (int n = 0; n < layer_num_; n++) {
+		for (int n = layer_num_ - 1; n >= 0; n--) {
 			Layer* now = &layer_[n];
-			for (int i = 0; i < layer_[n].node_num_; i++) {
+			for (int i = 0; i < now->node_num_; i++) {
 				now->grad_[i] = 0;
-				now->loss_dif_[i] = 0;
-				for (int j = 0; j < layer_[n].last_node_num_; j++) {
-					now->weight_grad_[i][j] = 0.0f;
+				now->back_pass_[i] = 0;
+				for (int j = 0; j < now->last_node_num_; j++) {
+					now->weight_grad_[i][j] = 0;
 				}
 			}
 		}
