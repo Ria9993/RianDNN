@@ -245,7 +245,7 @@ namespace RianDNN {
 				now->bias_[i] = now->bias_[i] - learning_rate * now->grad_[i];
 			}
 		}
-		//GradZero();
+		GradZero();
 	}
 	void DNN::GradZero() {
 		forward_step_ = 0;
