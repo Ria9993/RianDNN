@@ -7,7 +7,7 @@ using namespace RianDNN;
 
 int main() {
 	RianDNN::DNN dnn;
-	dnn.learning_rate = 0.005f;
+	dnn.learning_rate = 0.05f;
 	//dnn.momentum_rate = 0.1;
 	dnn.input_num_ = 1; //input Layer
 	dnn.AddLayer(30, "None");
