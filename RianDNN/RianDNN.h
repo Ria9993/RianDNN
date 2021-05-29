@@ -6,18 +6,6 @@
 #include <random>
 using namespace std;
 
-/*
-enum class Type {
-	Input = 0,
-	Hidden,
-	Output
-};
-enum class Activation {
-	None = 0,
-	ReLU
-};
-*/
-
 namespace RianDNN {
 	class Layer {
 	public:
@@ -56,6 +44,7 @@ namespace RianDNN {
 		}
 		void AddLayer(int node_num, string activation);
 		double* Forward(double* input); //just forward
+		double* Forward(int* input);
 		double* Forward(double* input, double* target); //forward for optimize
 		void Optimize(double* target);
 		inline double GetAct(string activation, int layer_num, double x); //activation function
@@ -163,6 +152,7 @@ namespace RianDNN {
 				for (int i = 0; i < now->node_num_; i++) {
 					now->result_[i] = now->bias_[i];
 					for (int j = 0; j < now->last_node_num_; j++) {
+						now->result_[i] += now->weight_[i][j] * input[j];
 						now->weight_grad_[i][j] = input[j];
 					}
 					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
@@ -172,6 +162,7 @@ namespace RianDNN {
 				for (int i = 0; i < now->node_num_; i++) {
 					now->result_[i] = now->bias_[i];
 					for (int j = 0; j < now->last_node_num_; j++) {
+						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
 						now->weight_grad_[i][j] = layer_[n - 1].result_[j];
 					}
 					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
@@ -180,7 +171,33 @@ namespace RianDNN {
 		}
 		return &layer_[layer_num_ - 1].result_[0];
 	}
-	double* DNN::Forward(double* input, double *target) {
+	double* DNN::Forward(int* input) {
+		for (int n = 0; n < layer_num_; n++) {
+			Layer* now = &layer_[n];
+			if (n == 0) { //First Hidden layer
+				for (int i = 0; i < now->node_num_; i++) {
+					now->result_[i] = now->bias_[i];
+					for (int j = 0; j < now->last_node_num_; j++) {
+						now->result_[i] += now->weight_[i][j] * (double)input[j];
+						now->weight_grad_[i][j] = (double)input[j];
+					}
+					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
+				}
+			}
+			else {
+				for (int i = 0; i < now->node_num_; i++) {
+					now->result_[i] = now->bias_[i];
+					for (int j = 0; j < now->last_node_num_; j++) {
+						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
+						now->weight_grad_[i][j] = layer_[n - 1].result_[j];
+					}
+					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
+				}
+			}
+		}
+		return &layer_[layer_num_ - 1].result_[0];
+	}
+	double* DNN::Forward(double* input, double* target) {
 		for (int n = 0; n < layer_num_; n++) {
 			Layer* now = &layer_[n];
 			if (n == 0) { //First Hidden layer
@@ -198,8 +215,8 @@ namespace RianDNN {
 				for (int i = 0; i < now->node_num_; i++) {
 					now->result_[i] = now->bias_[i];
 					for (int j = 0; j < now->last_node_num_; j++) {
-						now->result_[i] += now->weight_[i][j] * layer_[n-1].result_[j];
-						now->weight_grad_[i][j] = layer_[n-1].result_[j];
+						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
+						now->weight_grad_[i][j] = layer_[n - 1].result_[j];
 					}
 					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
 					now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
