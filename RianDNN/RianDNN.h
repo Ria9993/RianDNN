@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <algorithm>
 #include <vector>
@@ -43,9 +43,10 @@ namespace RianDNN {
 		~DNN() {
 		}
 		void AddLayer(int node_num, string activation);
-		double* Forward(double* input); //just forward
+		double* Forward(double* input); //just forward calc
 		double* Forward(int* input);
 		double* Forward(double* input, double* target); //forward for optimize
+		double* Forward(int* input, double* target);
 		void Optimize(double* target);
 		inline double GetAct(string activation, int layer_num, double x); //activation function
 		inline double GetActDif(string activation, int layer_num, double x); //differential
@@ -84,7 +85,7 @@ namespace RianDNN {
 			return x > 0 ? 1 : 0;
 		}
 		else if (activation == "Softmax") {
-			//x´Â ÀÌ¹Ì °è»êµÈ Softmax(z)
+			//xÂ´Ã‚ Ã€ÃŒÂ¹ÃŒ Â°Ã¨Â»ÃªÂµÃˆ Softmax(z)
 			return (x * (1 - x));
 		}
 		else { //"None"
@@ -153,7 +154,6 @@ namespace RianDNN {
 					now->result_[i] = now->bias_[i];
 					for (int j = 0; j < now->last_node_num_; j++) {
 						now->result_[i] += now->weight_[i][j] * input[j];
-						now->weight_grad_[i][j] = input[j];
 					}
 					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
 				}
@@ -163,7 +163,6 @@ namespace RianDNN {
 					now->result_[i] = now->bias_[i];
 					for (int j = 0; j < now->last_node_num_; j++) {
 						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
-						now->weight_grad_[i][j] = layer_[n - 1].result_[j];
 					}
 					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
 				}
@@ -179,7 +178,6 @@ namespace RianDNN {
 					now->result_[i] = now->bias_[i];
 					for (int j = 0; j < now->last_node_num_; j++) {
 						now->result_[i] += now->weight_[i][j] * (double)input[j];
-						now->weight_grad_[i][j] = (double)input[j];
 					}
 					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
 				}
@@ -189,7 +187,6 @@ namespace RianDNN {
 					now->result_[i] = now->bias_[i];
 					for (int j = 0; j < now->last_node_num_; j++) {
 						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
-						now->weight_grad_[i][j] = layer_[n - 1].result_[j];
 					}
 					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
 				}
@@ -205,7 +202,7 @@ namespace RianDNN {
 					now->result_[i] = now->bias_[i];
 					for (int j = 0; j < now->last_node_num_; j++) {
 						now->result_[i] += now->weight_[i][j] * input[j];
-						now->weight_grad_[i][j] = input[j];
+						now->weight_grad_[i][j] += input[j];
 					}
 					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
 					now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
@@ -216,7 +213,41 @@ namespace RianDNN {
 					now->result_[i] = now->bias_[i];
 					for (int j = 0; j < now->last_node_num_; j++) {
 						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
-						now->weight_grad_[i][j] = layer_[n - 1].result_[j];
+						now->weight_grad_[i][j] += layer_[n - 1].result_[j];
+					}
+					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
+					now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
+				}
+			}
+		}
+		Layer* output = &layer_[layer_num_ - 1];
+		for (int i = 0; i < output->node_num_; i++) {
+			output->back_pass_[i] += GetLossDif(target[i], output->result_[i]);
+		}
+		forward_step_++;
+		GetLoss(target);
+		return &layer_[layer_num_ - 1].result_[0];
+	}
+	double* DNN::Forward(int* input, double* target) {
+		for (int n = 0; n < layer_num_; n++) {
+			Layer* now = &layer_[n];
+			if (n == 0) { //First Hidden layer
+				for (int i = 0; i < now->node_num_; i++) {
+					now->result_[i] = now->bias_[i];
+					for (int j = 0; j < now->last_node_num_; j++) {
+						now->result_[i] += now->weight_[i][j] * (double)input[j];
+						now->weight_grad_[i][j] += (double)input[j];
+					}
+					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
+					now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
+				}
+			}
+			else {
+				for (int i = 0; i < now->node_num_; i++) {
+					now->result_[i] = now->bias_[i];
+					for (int j = 0; j < now->last_node_num_; j++) {
+						now->result_[i] += now->weight_[i][j] * layer_[n - 1].result_[j];
+						now->weight_grad_[i][j] += layer_[n - 1].result_[j];
 					}
 					now->result_[i] = GetAct(now->activation_, n, now->result_[i]);
 					now->grad_[i] += GetActDif(now->activation_, n, now->result_[i]);
