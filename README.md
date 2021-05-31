@@ -135,6 +135,5 @@ for (int step = 0;; step++) {
 //Target Netward Update
 model_target = model;
 ```
-# DQN Example(Repository)
+# DQN Example([Ria9993/DQN-Ballgame](https://github.com/Ria9993/DQN-Ballgame))
 [Ria9993/DQN-Ballgame](https://github.com/Ria9993/DQN-Ballgame)
-```
