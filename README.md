@@ -5,15 +5,32 @@ I'm making this for use in my machine learning projects
 ## Features
 
 #### Optimizer
-	SGD(Stochastic gradient descent)
+```python
+SGD(Stochastic Gradient Descent)
+```
 #### Activation Function
-	ReLU, Softmax, None
+```python
+ReLU,
+Softmax, 
+None
+```
 #### Loss Function
-	MSE(Mean Squared Error)
+```python
+MSE(Mean Squared Error)
+```
 #### Weight Initialize
-	He Normal(default)
+```python
+He Normal(Default)
+```
 #### Layer
-	Fully Connected
+```python
+Dense
+```
+## To be update
+```python
+CNN,
+LSTM
+```
 
 ## Example
 
