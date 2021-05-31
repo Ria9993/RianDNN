@@ -49,9 +49,9 @@ for (int i = 0; i < 10000; i++) { //epoch
 	/*Forward*/
 	double* output = dnn.Forward(input,target);
 
-	/*N-Step Optimize*/
+	/*Optimize*/
 	if (i % 5 == 0) {
-		dnn.Optimize(target);
+		dnn.Optimize();
 	}
 }
 ```
