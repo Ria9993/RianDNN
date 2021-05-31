@@ -262,7 +262,7 @@ namespace RianDNN {
 		GetLoss(target);
 		return &layer_[layer_num_ - 1].result_[0];
 	}
-	void DNN::Optimize(double* target) {
+	void DNN::Optimize() {
 		/*Get Avg derivation*/
 		for (int n = 0; n < layer_num_; n++) {
 			Layer* now = &layer_[n];
