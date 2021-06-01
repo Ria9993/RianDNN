@@ -21,15 +21,15 @@ int main() {
 	mt19937 rnd(rd());
 	uniform_real_distribution <double> rd100(-1, 1);
 	for (int i = 0; i < 10000; i++) {
-		double input[8] = {1,0,};
+		double input[100] = {1,0,};
 		for (int j = 0; j < 100; j++) {
 			//input[j] = rd100(rnd);
 			input[j] = 0.5f;
 		}
 		double target[2] = { 0.3f, 0.7f};
 		double* output = dnn.Forward(input,target);
-		if (i % 2 == 0) {
-			dnn.Optimize(target);
+		if (i % 5 == 0) {
+			dnn.Optimize();
 		}
 	}
 	return 0;

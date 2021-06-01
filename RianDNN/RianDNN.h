@@ -47,13 +47,13 @@ namespace RianDNN {
 		double* Forward(int* input);
 		double* Forward(double* input, double* target); //forward for optimize
 		double* Forward(int* input, double* target);
-		void Optimize(double* target);
+		void Optimize(); //Optimize
+		void GradZero(); //reset gradient
 		inline double GetAct(string activation, int layer_num, double x); //activation function
 		inline double GetActDif(string activation, int layer_num, double x); //differential
 		//inline double GetSoftmaxDif(); //Softmax must on outputlayer
 		double GetLoss(double* target); //default = MSE(Mean Squared Error)
 		double GetLossDif(double target, double x); //loss derivation
-		void GradZero(); //reset gradient
 	};
 
 	inline double DNN::GetAct(string activation, int layer_num, double x) {
