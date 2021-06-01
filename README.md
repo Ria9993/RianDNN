@@ -29,7 +29,8 @@ Dense
 ## To be update
 ```python
 CNN,
-LSTM
+Cross Entropy,
+LSTM,
 ```
 
 # Example
