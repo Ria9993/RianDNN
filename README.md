@@ -30,7 +30,8 @@ Dense
 ```python
 CNN,
 Cross Entropy,
-LSTM,
+Batch Normalization,
+LSTM
 ```
 
 # Example
