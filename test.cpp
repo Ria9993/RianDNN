@@ -16,6 +16,38 @@ int main() {
 	dnn.AddLayer(1, "Softmax");
 	//dnn.AddLayer(2, "Softmax"); //output layer 
 
+	/*
+	dnn.input_num_ = 10 * 10; //input Layer
+	dnn.AddLayer("Conv2D", { 10, 10, 8, 3, 3, 1 });
+	dnn.AddLayer("ReLU");
+	dnn.AddLayer("BatchNorm");
+	dnn.AddLayer("MaxPool", { 2, 2, 2 });
+	dnn.AddLayer("Conv2D", { 5, 5, 16, 3, 3, 1 });
+	dnn.AddLayer("ReLU");
+	dnn.AddLayer("BatchNorm");
+	dnn.AddLayer("MaxPool", { 2, 2, 2 });
+	dnn.AddLayer("Flatten");
+	dnn.AddLayer("Dense", { 55 });
+	dnn.AddLayer("BatchNorm");
+	dnn.AddLayer("ReLU");
+	dnn.AddLayer("Dense", { 55 });
+	dnn.AddLayer("BatchNorm");
+	dnn.AddLayer("ReLU");
+	dnn.AddLayer("Dense", { 10 });
+	dnn.AddLayer("Softmax");
+	*/
+	/*
+	dnn.input_num_ = 10 * 10; //input Layer
+	dnn.Conv2D(10, 10, 8, 3, 3, 1);
+	dnn.BatchNorm();
+	dnn.ReLU();
+	dnn.MaxPool(2, 2, 2);
+	dnn.Flatten();
+	dnn.Dense(55);
+	dnn.BatchNorn();
+	dnn.ReLU();
+	*/
+
 	/*DEBUG*/
 	random_device rd;
 	mt19937 rnd(rd());
