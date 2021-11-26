@@ -1,4 +1,4 @@
-# This project Moved to ([RianDNNv2](https://github.com/Ria9993/RianDNN))
+# This project Moved to ([RianDNNv2](https://github.com/Ria9993/RianDNNv2))
 
 # RianDNN
 
